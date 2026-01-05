@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Training Log (offline)</title>
+  <title>Training Log</title>
   <style>
     :root{
       --card:#111826; --text:#e8eef7; --muted:#a7b3c6; --line:#243247; --accent:#7dd3fc;
@@ -128,7 +128,6 @@
       line-height: 1.4;
     }
 
-    /* Error banner */
     #errorBanner{
       display:none;
       background: rgba(251,113,133,.14);
@@ -145,35 +144,24 @@
     /* ---------- MOBILE FIX (iPhone) ---------- */
     @media (max-width: 520px){
       .container{ padding: 12px; }
-
-      /* 2 cols -> 1 col */
       .grid{ grid-template-columns: 1fr !important; }
       .full{ grid-column: 1 / -1; }
-
-      /* buttons stack */
       .row, .actions{ gap: 8px; }
       button{ width: 100%; }
 
-      /* exercise card: thumb on top */
       .exerciseHeader{ flex-direction: column; }
       .thumb{ width: 100%; min-width: 0; height: 90px; }
       .thumb svg{ width: 100%; height: 90px; }
 
-      /* set row: 4 cols -> 2 cols, delete button full width */
       .setRow{ grid-template-columns: 1fr 1fr; align-items: stretch; }
       .setRow .removeSet{ grid-column: 1 / -1; width: 100%; }
 
-      /* compare: 3 cols -> 1 col */
       .compareGrid{ grid-template-columns: 1fr !important; }
-
       .pill{ font-size: 11px; }
       input, textarea, select{ padding: 10px; }
     }
-
-    /* Medium phones */
     @media (min-width: 521px) and (max-width: 800px){
       .compareGrid{ grid-template-columns: 1fr 1fr; }
-      .setRow{ grid-template-columns: 1fr 1fr 1fr auto; }
     }
   </style>
 </head>
@@ -183,10 +171,10 @@
     <div id="errorBanner"></div>
 
     <header class="card">
-      <h1>Training Log (offline)</h1>
-      <p>Kies Push/Pull/Benen → workout laadt automatisch → log je sets.</p>
+      <h1>Training Log</h1>
+      <p>Kies Push / Pull / Benen → workout laadt automatisch → log je sets.</p>
       <div class="warn" style="margin-top:10px;">
-        iPhone: open dit bestand in een echte browser-context (webpagina). In Bestanden-preview kan JS stuk gaan.
+        Let op iPhone: als je dit lokaal uit Bestanden opent kan JS/storage beperkt zijn. Een webpagina (https) werkt het meest stabiel.
       </div>
     </header>
 
@@ -209,7 +197,7 @@
         </label>
 
         <div class="full row">
-          <div class="hint">Tip: wissel training hierboven—de workout wordt direct geladen.</div>
+          <div class="hint">Wissel training hierboven—de workout laadt direct. “Herlaad” zet ’m opnieuw.</div>
           <div class="row">
             <button type="button" id="reloadBtn" class="small">Herlaad workout</button>
             <button type="button" id="clearFormBtn" class="small danger">Form leegmaken</button>
@@ -251,12 +239,15 @@
             </div>
             <button type="button" class="danger small" data-remove>Verwijder</button>
           </div>
+
           <div class="tips" data-tips></div>
           <div class="tips" data-compare></div>
+
           <div class="row" style="margin-top:10px;">
             <h3>Sets</h3>
             <button type="button" class="small" data-addset>+ Set</button>
           </div>
+
           <div class="sets" data-sets></div>
         </div>
       </div>
@@ -279,7 +270,7 @@
   </template>
 
   <script>
-    // --- Error reporting ---
+    // Error banner
     const errorBanner = document.getElementById("errorBanner");
     window.addEventListener("error", (e) => {
       errorBanner.style.display = "block";
@@ -290,7 +281,7 @@
         (typeof e?.lineno === "number" ? ("\nRegel: " + e.lineno) : "");
     });
 
-    const STORAGE_KEY = "training_sessions_offline_templates_min_v2_mobilefix";
+    const STORAGE_KEY = "training_sessions_full_v1_mobilefix";
 
     // DOM
     const sessionForm = document.getElementById("sessionForm");
@@ -309,6 +300,7 @@
     const exerciseTemplate = document.getElementById("exerciseTemplate");
     const setTemplate = document.getElementById("setTemplate");
 
+    // Utils
     function todayISO(){
       const d = new Date();
       const yyyy = d.getFullYear();
@@ -329,7 +321,6 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
-
     function loadSessions(){
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -346,36 +337,112 @@
       return String(Date.now()) + "-" + Math.random().toString(16).slice(2);
     }
 
-    // Simple SVG thumbs (offline)
+    // SVG thumbs (offline / simpel)
     const SVG = {
       bench: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="50" width="80" height="6" rx="3" fill="rgba(125,211,252,.35)"/><rect x="18" y="40" width="40" height="6" rx="3" fill="rgba(125,211,252,.55)"/><circle cx="60" cy="34" r="5" fill="rgba(232,238,247,.7)"/><rect x="44" y="18" width="32" height="4" rx="2" fill="rgba(232,238,247,.45)"/></svg>`,
-      press: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><circle cx="46" cy="20" r="6" fill="rgba(232,238,247,.7)"/><rect x="34" y="46" width="24" height="14" rx="7" fill="rgba(125,211,252,.25)"/><rect x="20" y="14" width="52" height="4" rx="2" fill="rgba(125,211,252,.55)"/></svg>`,
+      incline: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="52" width="72" height="6" rx="3" fill="rgba(125,211,252,.35)"/><rect x="24" y="26" width="42" height="6" rx="3" transform="rotate(18 24 26)" fill="rgba(125,211,252,.55)"/><circle cx="58" cy="30" r="5" fill="rgba(232,238,247,.7)"/></svg>`,
+      press: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><circle cx="46" cy="20" r="6" fill="rgba(232,238,247,.7)"/><rect x="20" y="14" width="52" height="4" rx="2" fill="rgba(125,211,252,.55)"/><rect x="34" y="46" width="24" height="14" rx="7" fill="rgba(125,211,252,.25)"/></svg>`,
+      lateral: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><circle cx="46" cy="18" r="6" fill="rgba(232,238,247,.7)"/><rect x="18" y="30" width="56" height="4" rx="2" fill="rgba(125,211,252,.55)"/><rect x="34" y="48" width="24" height="14" rx="7" fill="rgba(125,211,252,.25)"/></svg>`,
       row: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="54" width="72" height="5" rx="2.5" fill="rgba(125,211,252,.35)"/><circle cx="40" cy="28" r="5" fill="rgba(232,238,247,.7)"/><rect x="44" y="38" width="22" height="4" rx="2" fill="rgba(232,238,247,.35)"/></svg>`,
-      curl: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><circle cx="46" cy="16" r="6" fill="rgba(232,238,247,.7)"/><rect x="34" y="46" width="24" height="14" rx="7" fill="rgba(125,211,252,.25)"/><rect x="22" y="28" width="48" height="8" rx="4" fill="rgba(125,211,252,.25)"/></svg>`,
+      curl: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><circle cx="46" cy="16" r="6" fill="rgba(232,238,247,.7)"/><rect x="22" y="28" width="48" height="8" rx="4" fill="rgba(125,211,252,.25)"/><rect x="34" y="46" width="24" height="14" rx="7" fill="rgba(125,211,252,.25)"/></svg>`,
+      band: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><path d="M18 44 C30 34, 62 34, 74 44" fill="none" stroke="rgba(125,211,252,.55)" stroke-width="4" stroke-linecap="round"/><circle cx="46" cy="20" r="6" fill="rgba(232,238,247,.7)"/></svg>`,
       squat: () => `<svg viewBox="0 0 92 72" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="18" width="60" height="4" rx="2" fill="rgba(125,211,252,.55)"/><circle cx="46" cy="24" r="6" fill="rgba(232,238,247,.7)"/><rect x="30" y="40" width="32" height="10" rx="5" fill="rgba(232,238,247,.35)"/></svg>`
     };
 
-    // Library
+    // FULL Library (meer oefeningen)
     const LIB = {
+      // PUSH
       db_bench: { name:"Dumbbell Bench Press", muscles:"Borst • triceps • schouders", equipment:"DB + bank", thumb: SVG.bench,
-        tips:["Schouderbladen naar achter/beneden.","Elleboog ~30–60° van je romp.","Rustig omlaag, krachtig omhoog."] },
+        tips:["Schouderbladen naar achter/beneden.","Elleboog 30–60° van je romp.","Rustig omlaag, krachtig omhoog."] },
+      db_incline: { name:"Incline Dumbbell Press", muscles:"Bovenborst • schouders", equipment:"DB + bank", thumb: SVG.incline,
+        tips:["Bank ~20–35°.","Polsen boven ellebogen.","Stop vóór schouders naar voren rollen."] },
+      db_floor_press: { name:"Dumbbell Floor Press", muscles:"Borst • triceps", equipment:"DB", thumb: SVG.bench,
+        tips:["Elleboog tikt vloer licht.","Top: knijp borst.","Veilig voor schouders."] },
+      pushup: { name:"Push-up (band opt.)", muscles:"Borst • triceps • core", equipment:"BW/band", thumb: SVG.bench,
+        tips:["Lichaam in 1 lijn.","Borst naar vloer.","Band voor extra weerstand."] },
       db_shoulder_press: { name:"Dumbbell Shoulder Press", muscles:"Schouders • triceps", equipment:"DB", thumb: SVG.press,
-        tips:["Core strak, ribben omlaag.","Druk zonder ‘shrug’.","Langzaam omlaag."] },
-      one_arm_row: { name:"One-Arm DB Row", muscles:"Rug • biceps", equipment:"DB + bank", thumb: SVG.row,
+        tips:["Core strak, ribben omlaag.","Druk zonder shrug.","Langzaam omlaag."] },
+      arnold_press: { name:"Arnold Press", muscles:"Schouders", equipment:"DB", thumb: SVG.press,
+        tips:["Draai gecontroleerd.","Niet te zwaar.","Volledige ROM."] },
+      lateral_raise: { name:"Lateral Raise", muscles:"Zijkant schouder", equipment:"DB/band", thumb: SVG.lateral,
+        tips:["Licht gewicht, 12–20 reps.","Kleine elleboogbuiging.","Stop rond schouderhoogte."] },
+      front_raise: { name:"Front Raise", muscles:"Voor schouder", equipment:"DB/band", thumb: SVG.lateral,
+        tips:["Niet swingen.","1 sec pause bovenin.","Combineer met lateral raise."] },
+      skullcrusher: { name:"Skull Crushers", muscles:"Triceps", equipment:"DB + bank", thumb: SVG.press,
+        tips:["Elleboog omhoog.","Stretch achter het hoofd.","Controle > ego."] },
+      triceps_overhead: { name:"Overhead Triceps Extension", muscles:"Triceps", equipment:"DB", thumb: SVG.press,
+        tips:["Elleboog smal.","Volledige stretch.","Rustig tempo."] },
+      close_grip_press: { name:"Close-Grip DB Press", muscles:"Triceps • borst", equipment:"DB + bank", thumb: SVG.bench,
+        tips:["DB’s dicht bij elkaar.","Elleboog langs romp.","Top: triceps knijpen."] },
+
+      // PULL
+      one_arm_row: { name:"One-Arm Dumbbell Row", muscles:"Rug • biceps", equipment:"DB + bank", thumb: SVG.row,
         tips:["Heupen stil.","Elleboog richting heup.","1 sec squeeze bovenin."] },
-      bicep_curl: { name:"DB Bicep Curl", muscles:"Biceps", equipment:"DB", thumb: SVG.curl,
+      chest_supported_row: { name:"Chest-Supported DB Row", muscles:"Bovenrug", equipment:"DB + bank", thumb: SVG.row,
+        tips:["Bank schuin.","Borst op bank.","Trek naar heupen."] },
+      db_rdl: { name:"Dumbbell RDL", muscles:"Hamstrings • billen • onderrug", equipment:"DB", thumb: SVG.squat,
+        tips:["Heupen naar achter.","Rug neutraal.","Voel stretch hamstrings."] },
+      band_row: { name:"Band Row", muscles:"Rug", equipment:"Band", thumb: SVG.band,
+        tips:["Span band stevig.","Elleboog naar achter.","Squeeze 1 sec."] },
+      band_facepull: { name:"Band Face Pull", muscles:"Achter schouder • bovenrug", equipment:"Band", thumb: SVG.band,
+        tips:["Trek naar neus/voorhoofd.","Elleboog hoog.","1 sec vasthouden."] },
+      band_pulldown: { name:"Band Lat Pulldown (kniel)", muscles:"Lats", equipment:"Band", thumb: SVG.band,
+        tips:["Kniel, band hoog vast.","Trek elleboog naar heup.","Geen shrug."] },
+      bicep_curl: { name:"Dumbbell Bicep Curl", muscles:"Biceps", equipment:"DB", thumb: SVG.curl,
         tips:["Elleboog naast romp.","Volledige ROM.","2–3 sec omlaag."] },
+      hammer_curl: { name:"Hammer Curl", muscles:"Biceps • brachialis", equipment:"DB", thumb: SVG.curl,
+        tips:["Neutrale greep.","Controle.","Top voor ‘dikke’ armen."] },
+      incline_curl: { name:"Incline DB Curl", muscles:"Biceps (lange kop)", equipment:"DB + bank", thumb: SVG.incline,
+        tips:["Bank licht schuin.","Elleboog achter je romp.","Geen swing."] },
+      rear_delt_fly: { name:"Rear Delt Fly", muscles:"Achter schouder", equipment:"DB/band", thumb: SVG.lateral,
+        tips:["Heup-hinge.","Elleboog licht gebogen.","Squeeze achter schouder."] },
+
+      // LEGS + CORE
       goblet_squat: { name:"Goblet Squat", muscles:"Benen • core", equipment:"DB", thumb: SVG.squat,
-        tips:["Kniespoor volgt tenen.","Borst trots.","Diep zolang rug neutraal blijft."] },
+        tips:["Knieën volgen tenen.","Borst trots.","Diep zolang rug neutraal."] },
+      split_squat: { name:"Bulgarian Split Squat", muscles:"Quads • billen", equipment:"DB + bank", thumb: SVG.squat,
+        tips:["Achtervoet op bank.","Langzaam zakken.","Voorste voet stabiel."] },
+      reverse_lunge: { name:"Reverse Lunge", muscles:"Quads • billen", equipment:"DB", thumb: SVG.squat,
+        tips:["Stap achteruit.","Voorste knie stabiel.","Duw via voorste hiel."] },
+      hip_thrust: { name:"Hip Thrust (DB)", muscles:"Billen", equipment:"DB + bank", thumb: SVG.bench,
+        tips:["Kin licht in.","Top: 1 sec knijpen.","Ribben omlaag."] },
+      calf_raise: { name:"Calf Raise", muscles:"Kuiten", equipment:"DB", thumb: SVG.squat,
+        tips:["Volledige stretch onderin.","1 sec pauze bovenin.","12–20 reps."] },
+      plank: { name:"Plank", muscles:"Core", equipment:"BW", thumb: SVG.band,
+        tips:["Billen niet omhoog.","Ribben omlaag.","Adem rustig."] },
+      deadbug: { name:"Dead Bug", muscles:"Core", equipment:"BW", thumb: SVG.band,
+        tips:["Onder rug licht in vloer.","Langzaam.","Controle boven snelheid."] },
     };
 
-    // Templates (basis)
+    // TEMPLATES (gevuld)
     const TEMPLATES = {
-      push: ["db_bench", "db_shoulder_press"],
-      pull: ["one_arm_row", "bicep_curl"],
-      legs: ["goblet_squat"]
+      push: [
+        "db_bench",
+        "db_incline",
+        "db_shoulder_press",
+        "lateral_raise",
+        "skullcrusher",
+        "band_facepull"
+      ],
+      pull: [
+        "one_arm_row",
+        "chest_supported_row",
+        "rear_delt_fly",
+        "band_facepull",
+        "bicep_curl",
+        "hammer_curl"
+      ],
+      legs: [
+        "goblet_squat",
+        "db_rdl",
+        "split_squat",
+        "hip_thrust",
+        "calf_raise",
+        "plank"
+      ]
     };
 
+    // Sets
     function addSet(setsEl, preset){
       const node = setTemplate.content.firstElementChild.cloneNode(true);
       if (preset){
@@ -387,6 +454,7 @@
       setsEl.appendChild(node);
     }
 
+    // Best set + volume
     function bestSet(sets){
       let best = null;
       for (const s of sets){
@@ -408,6 +476,7 @@
       return (ex.sets||[]).reduce((sum, s) => sum + setVolume(s), 0);
     }
 
+    // Find last snapshot by name
     function findLastExerciseSnapshotByName(name, sessions){
       const key = (name||"").trim().toLowerCase();
       if (!key) return null;
@@ -422,6 +491,7 @@
       return null;
     }
 
+    // Compare UI
     function formatBestSet(set){
       if (!set) return "—";
       const w = set.weight ?? null, r = set.reps ?? null;
@@ -476,6 +546,7 @@
       `;
     }
 
+    // Render exercise card
     function addExerciseCard(exId){
       const ex = LIB[exId];
       if (!ex) return;
@@ -497,7 +568,7 @@
       muscles.textContent = ex.muscles;
       equipment.textContent = ex.equipment;
 
-      tipsEl.innerHTML = `<div><b>Uitleg</b></div><ul>${ex.tips.map(t => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`;
+      tipsEl.innerHTML = `<div><b>Uitleg</b></div><ul>${(ex.tips||[]).map(t => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`;
 
       const initialSets = (prevSnap?.sets?.length ? prevSnap.sets : [{},{},{}]);
       for (const s of initialSets) addSet(setsEl, s);
@@ -532,14 +603,11 @@
     function loadTemplate(key){
       exercisesWrap.innerHTML = "";
       const ids = TEMPLATES[key] || [];
-      if (ids.length === 0){
+      if (!ids.length){
         exercisesWrap.innerHTML = `<div class="warn">Geen template gevonden voor: <b>${escapeHtml(key)}</b></div>`;
         return;
       }
       ids.forEach(addExerciseCard);
-      if (!exercisesWrap.children.length){
-        exercisesWrap.innerHTML = `<div class="warn">Template geladen maar niets gerenderd. Check foutmelding bovenaan.</div>`;
-      }
     }
 
     function collectExercises(){
@@ -547,6 +615,7 @@
       exercisesWrap.querySelectorAll(".exercise").forEach(exNode => {
         const name = exNode.querySelector("[data-title]")?.textContent?.trim() || "";
         if (!name) return;
+
         const sets = [];
         exNode.querySelectorAll(".setRow").forEach(row => {
           const reps = parseNum(row.querySelector(".reps").value);
@@ -555,6 +624,7 @@
           if (reps === null && weight === null && rpe === null) return;
           sets.push({ reps, weight, rpe });
         });
+
         out.push({ name, sets });
       });
       return out;
@@ -563,21 +633,16 @@
     function renderLog(){
       const sessions = loadSessions().sort((a,b) => (b.date||"").localeCompare(a.date||""));
       if (!sessions.length){ logEl.textContent = "Nog geen trainingen."; return; }
-      logEl.innerHTML = sessions.slice(0,10).map(s => {
+      logEl.innerHTML = sessions.slice(0,12).map(s => {
         const summary = (s.exercises||[]).map(e => e.name).join(", ");
-        return `<div style="margin:6px 0;"><b>${escapeHtml(s.date)}</b> — ${escapeHtml((s.template||"").toUpperCase())}<br><span class="hint">${escapeHtml(summary)}</span></div>`;
+        return `<div style="margin:8px 0;">
+          <b>${escapeHtml(s.date)}</b> — ${escapeHtml((s.template||"").toUpperCase())}<br>
+          <span class="hint">${escapeHtml(summary)}</span>
+        </div>`;
       }).join("");
     }
 
-    // Events
-    templateSelect.addEventListener("change", () => loadTemplate(templateSelect.value));
-    reloadBtn.addEventListener("click", () => loadTemplate(templateSelect.value));
-    clearFormBtn.addEventListener("click", () => {
-      sessionNotesEl.value = "";
-      loadTemplate(templateSelect.value);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
-
+    // Export/Import
     exportBtn.addEventListener("click", () => {
       const sessions = loadSessions();
       const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: "application/json" });
@@ -607,6 +672,15 @@
       }finally{
         importFile.value = "";
       }
+    });
+
+    // Events
+    templateSelect.addEventListener("change", () => loadTemplate(templateSelect.value));
+    reloadBtn.addEventListener("click", () => loadTemplate(templateSelect.value));
+    clearFormBtn.addEventListener("click", () => {
+      sessionNotesEl.value = "";
+      loadTemplate(templateSelect.value);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
     sessionForm.addEventListener("submit", (ev) => {
